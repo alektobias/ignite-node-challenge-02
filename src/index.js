@@ -10,19 +10,70 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+
+
+  const usernameAlreadyExists = users.some((user) => user.username === username);
+
+  if (usernameAlreadyExists) {
+    const userIndex = users.findIndex((user) => user.username === username);
+    request.user = users[userIndex]
+
+    return next()
+  }
+
+  return response.status(404).json({error: "User does not exists"})
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const { pro, todos } = request.user;
+  
+  if(!pro && todos.length >= 10) {
+    return response.status(403).json({error: "Not Authorized"})
+  }
+  
+  return next()
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+  const { id } = request.params
+
+  if(!validate(id)) return response.status(400).json({error: "Id should be a UUID"})
+
+  const userExist = users.some(user => user.username === username)
+
+  if(!userExist) return response.status(404).json({error: "user not found"})
+
+  const userIndex = users.findIndex(user => user.username === username)
+
+  const selectedUser = users[userIndex];
+  
+  const todoExist = selectedUser.todos.some(todo => todo.id === id)
+  
+  if(!todoExist) return response.status(404).json({error: "Todo does not exists" })
+  
+  const todoIndex = selectedUser.todos.findIndex(todo => todo.id === id)
+  
+  request.user = selectedUser
+  request.todo = selectedUser.todos[todoIndex]
+
+  return next()
+
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params;
+
+  const userExist = users.some(user => user.id === id);
+
+  if(!userExist) return response.status(404).json({error: "User does not exists"});
+  
+  const userIndex = users.findIndex(user => user.id === id);
+  
+  request.user = users[userIndex]
+  
+  return next()
 }
 
 app.post('/users', (request, response) => {
